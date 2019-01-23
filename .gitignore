@@ -15,7 +15,6 @@ misc/*
 src/release.h
 appendonly.aof
 SHORT_TERM_TODO
-release.h
 src/transfer.sh
 src/configs
 redis.ds
@@ -28,3 +27,4 @@ deps/lua/src/liblua.a
 .prerequisites
 *.dSYM
 Makefile.dep
+.idea/
