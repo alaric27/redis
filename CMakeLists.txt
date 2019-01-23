@@ -122,3 +122,6 @@ target_link_libraries(redis-cli
         PRIVATE linenoise
         PRIVATE hiredis
         )
+
+set(SRC_HELLC test/demo.c)
+add_executable(demo ${SRC_HELLC})
