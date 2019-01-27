@@ -600,13 +600,22 @@ typedef struct RedisModuleDigest {
 #define LRU_CLOCK_RESOLUTION 1000 /* LRU clock resolution in ms */
 
 #define OBJ_SHARED_REFCOUNT INT_MAX
+
+/**
+ * redis 对象
+ */
 typedef struct redisObject {
+    // 类型,键总是一个字符串对象，而值可以是：字符串对象、列表对象、哈希对象、集合对象、有序集合对象
     unsigned type:4;
+    // 编码
     unsigned encoding:4;
+    // 记录了对象最后一次被访问的时间
     unsigned lru:LRU_BITS; /* LRU time (relative to global lru_clock) or
                             * LFU data (least significant 8 bits frequency
                             * and most significant 16 bits access time). */
+    // 引用计数
     int refcount;
+    // 指向底层实现数据结构的指针
     void *ptr;
 } robj;
 
@@ -633,7 +642,12 @@ typedef struct clientReplyBlock {
 /* Redis database representation. There are multiple databases identified
  * by integers from 0 (the default database) up to the max configured
  * database. The database number is the 'id' field in the structure. */
+
+/**
+ * redis数据库
+ */
 typedef struct redisDb {
+    // 数据库键空间，保存着数据库中所有的键值对
     dict *dict;                 /* The keyspace for this DB */
     dict *expires;              /* Timeout of keys with a timeout set */
     dict *blocking_keys;        /* Keys with clients waiting for data (BLPOP)*/
@@ -652,7 +666,9 @@ typedef struct multiCmd {
 } multiCmd;
 
 typedef struct multiState {
+    // 事务队列
     multiCmd *commands;     /* Array of MULTI commands */
+    // 已入队命令计数
     int count;              /* Total number of MULTI commands */
     int cmd_flags;          /* The accumulated command flags OR-ed together.
                                So if at least a command has a given flag, it
@@ -711,9 +727,12 @@ typedef struct readyList {
  * Clients are taken in a linked list. */
 typedef struct client {
     uint64_t id;            /* Client incremental unique ID. */
+    // 记录了客户端正在使用的套接字描述符
     int fd;                 /* Client socket. */
     redisDb *db;            /* Pointer to currently SELECTed DB. */
+    // 客户端名称
     robj *name;             /* As set by CLIENT SETNAME. */
+    // 用于保存客户端发送的命令请求
     sds querybuf;           /* Buffer we use to accumulate client queries. */
     size_t qb_pos;          /* The position we have read in querybuf. */
     sds pending_querybuf;   /* If this client is flagged as master, this buffer
@@ -721,20 +740,30 @@ typedef struct client {
                                replication stream that we are receiving from
                                the master. */
     size_t querybuf_peak;   /* Recent (100ms or more) peak of querybuf size. */
+    // 记录argc数组的长度
     int argc;               /* Num of arguments of current command. */
+    // 解析querybuf后的命令数组
     robj **argv;            /* Arguments of current command. */
+    // 命令的实现函数
     struct redisCommand *cmd, *lastcmd;  /* Last command executed. */
     int reqtype;            /* Request protocol type: PROTO_REQ_* */
     int multibulklen;       /* Number of multi bulk arguments left to read. */
     long bulklen;           /* Length of bulk argument in multi bulk request. */
+
+    // 可变大小缓冲区
     list *reply;            /* List of reply objects to send to the client. */
     unsigned long long reply_bytes; /* Tot bytes of objects in reply list. */
     size_t sentlen;         /* Amount of bytes already sent in the current
                                buffer or object being sent. */
+    // 记录客户端创建时间
     time_t ctime;           /* Client creation time. */
+    // 记录与客户端最后一次交互的时间
     time_t lastinteraction; /* Time of the last interaction, used for timeout */
+    // 输出缓冲区第一次达到软性限制的时间
     time_t obuf_soft_limit_reached_time;
+    // 记录客户端角色，及客户端所处的状态
     int flags;              /* Client flags: CLIENT_* macros. */
+    // 记录客户端是否通过了身份验证
     int authenticated;      /* When requirepass is non-NULL. */
     int replstate;          /* Replication state if this is a slave. */
     int repl_put_online_on_ack; /* Install slave write handler on ACK. */
@@ -750,21 +779,27 @@ typedef struct client {
                                        copying this slave output buffer
                                        should use. */
     char replid[CONFIG_RUN_ID_SIZE+1]; /* Master replication ID (if master). */
+    // 从服务器的监听端口
     int slave_listening_port; /* As configured with: SLAVECONF listening-port */
     char slave_ip[NET_IP_STR_LEN]; /* Optionally given by REPLCONF ip-address */
     int slave_capa;         /* Slave capabilities: SLAVE_CAPA_* bitwise OR. */
+    // 事务状态
     multiState mstate;      /* MULTI/EXEC state */
     int btype;              /* Type of blocking op if CLIENT_BLOCKED. */
     blockingState bpop;     /* blocking state */
     long long woff;         /* Last write global replication offset. */
     list *watched_keys;     /* Keys WATCHED for MULTI/EXEC CAS */
+    // 保存所有频道的订阅关系
     dict *pubsub_channels;  /* channels a client is interested in (SUBSCRIBE) */
+    // 保存所有模式订阅关系
     list *pubsub_patterns;  /* patterns a client is interested in (SUBSCRIBE) */
     sds peerid;             /* Cached peer ID. */
     listNode *client_list_node; /* list node in client list */
 
     /* Response buffer */
+    // 记录buf使用情况
     int bufpos;
+    // 固定大小的输出缓存区
     char buf[PROTO_REPLY_CHUNK_BYTES];
 } client;
 
@@ -796,19 +831,34 @@ struct sharedObjectsStruct {
 };
 
 /* ZSETs use a specialized version of Skiplists */
+/**
+ * 跳跃表节点
+ */
 typedef struct zskiplistNode {
+    // 值
     sds ele;
+    // 分数
     double score;
+    // 后退指针
     struct zskiplistNode *backward;
+    // 层
     struct zskiplistLevel {
+        // 前进指针
         struct zskiplistNode *forward;
+        // 跨度
         unsigned long span;
     } level[];
 } zskiplistNode;
 
+/**
+ * 跳跃表
+ */
 typedef struct zskiplist {
+    // header 跳跃表的头部，tail 跳跃表的尾部
     struct zskiplistNode *header, *tail;
+    // 跳跃表的长度
     unsigned long length;
+    // 记录目前跳跃表内，层数最大的那个节点的层数
     int level;
 } zskiplist;
 
@@ -937,10 +987,12 @@ struct redisServer {
                                    the actual 'hz' field value if dynamic-hz
                                    is enabled. */
     int hz;                     /* serverCron() calls frequency in hertz */
+    // 一个数组，保存着服务器中所有的数据库
     redisDb *db;
     dict *commands;             /* Command table */
     dict *orig_commands;        /* Command table before command renaming. */
     aeEventLoop *el;
+    // 默认每10秒更新一次的时钟缓冲，用于计算键的空转(idle)时长
     unsigned int lruclock;      /* Clock for LRU eviction */
     int shutdown_asap;          /* SHUTDOWN needed ASAP */
     int activerehashing;        /* Incremental rehash in serverCron() */
@@ -971,6 +1023,7 @@ struct redisServer {
     int sofd;                   /* Unix socket file descriptor */
     int cfd[CONFIG_BINDADDR_MAX];/* Cluster bus listening socket */
     int cfd_count;              /* Used slots in cfd[] */
+    // 一个链表，保存了所有的客户端信息
     list *clients;              /* List of active clients */
     list *clients_to_close;     /* Clients to close asynchronously */
     list *clients_pending_write; /* There is to write or install handler. */
@@ -1047,6 +1100,7 @@ struct redisServer {
     int active_defrag_cycle_max;       /* maximal effort for defrag in CPU percentage */
     unsigned long active_defrag_max_scan_fields; /* maximum number of fields of set/hash/zset/list to process from within the main dict scan */
     size_t client_max_querybuf_len; /* Limit for client query buffer length */
+    // 数据库数量
     int dbnum;                      /* Total number of configured DBs */
     int supervised;                 /* 1 if supervised, 0 otherwise. */
     int supervised_mode;            /* See SUPERVISED_* */
@@ -1147,7 +1201,9 @@ struct redisServer {
     int repl_diskless_sync_delay;   /* Delay to start a diskless repl BGSAVE. */
     /* Replication (slave) */
     char *masterauth;               /* AUTH with this password with master */
+    // 主节点地址
     char *masterhost;               /* Hostname of master */
+    // 主节点端口
     int masterport;                 /* Port of master */
     int repl_timeout;               /* Timeout after N seconds of master idle */
     client *master;     /* Client that is master for this slave */
@@ -1214,9 +1270,11 @@ struct redisServer {
     int list_max_ziplist_size;
     int list_compress_depth;
     /* time cache */
+    // 保存了秒级精度的系统当前时间
     time_t unixtime;    /* Unix time sampled every cron cycle. */
     time_t timezone;    /* Cached timezone. As set by tzset(). */
     int daylight_active;    /* Currently in daylight saving time. */
+    // 保存了毫秒精度的系统当前时间
     long long mstime;   /* Like 'unixtime' but with milliseconds resolution. */
     /* Pubsub */
     dict *pubsub_channels;  /* Map channels to list of subscribed clients */
@@ -1243,6 +1301,8 @@ struct redisServer {
                                       REDISMODULE_CLUSTER_FLAG_*. */
     /* Scripting */
     lua_State *lua; /* The Lua interpreter. We use just one for all clients */
+
+    // 伪客户端，负责执行lua脚本
     client *lua_client;   /* The "fake client" to query Redis from Lua */
     client *lua_caller;   /* The client running EVAL right now, or NULL */
     dict *lua_scripts;         /* A dictionary of SHA1 -> Lua scripts */
@@ -1807,6 +1867,14 @@ int rewriteConfig(char *path);
 /* db.c -- Keyspace access API */
 int removeExpire(redisDb *db, robj *key);
 void propagateExpire(redisDb *db, robj *key, int lazy);
+
+/**
+ * 惰性删除策略的实现，所有读写数据库的Redis命令在执行前都会调用expireIfNeeded函数，对输入键进行检查
+ * 如果键过期，删除键
+ * @param db
+ * @param key
+ * @return
+ */
 int expireIfNeeded(redisDb *db, robj *key);
 long long getExpire(redisDb *db, robj *key);
 void setExpire(client *c, redisDb *db, robj *key, long long when);
@@ -1905,6 +1973,9 @@ void signalKeyAsReady(redisDb *db, robj *key);
 void blockForKeys(client *c, int btype, robj **keys, int numkeys, mstime_t timeout, robj *target, streamID *ids);
 
 /* expire.c -- Handling of expired keys */
+/**
+ * 从数据库的expires字典中随机检查一部分过期时间，并删除其中的过期键
+ */
 void activeExpireCycle(int type);
 void expireSlaveKeys(void);
 void rememberSlaveKeyWithExpire(redisDb *db, robj *key);

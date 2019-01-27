@@ -135,10 +135,30 @@ uint64_t rdbLoadLen(rio *rdb, int *isencoded);
 int rdbLoadLenByRef(rio *rdb, int *isencoded, uint64_t *lenptr);
 int rdbSaveObjectType(rio *rdb, robj *o);
 int rdbLoadObjectType(rio *rdb);
+
+/**
+ * 加载RDB文件
+ * @param filename
+ * @param rsi
+ * @return
+ */
 int rdbLoad(char *filename, rdbSaveInfo *rsi);
+/**
+ * 非阻塞式，生成RDB文件
+ * @param filename
+ * @param rsi
+ * @return
+ */
 int rdbSaveBackground(char *filename, rdbSaveInfo *rsi);
 int rdbSaveToSlavesSockets(rdbSaveInfo *rsi);
 void rdbRemoveTempFile(pid_t childpid);
+
+/**
+ * 阻塞式 生成RDB文件
+ * @param filename
+ * @param rsi
+ * @return
+ */
 int rdbSave(char *filename, rdbSaveInfo *rsi);
 ssize_t rdbSaveObject(rio *rdb, robj *o);
 size_t rdbSavedObjectLen(robj *o);

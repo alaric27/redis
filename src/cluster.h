@@ -39,10 +39,15 @@ struct clusterNode;
 
 /* clusterLink encapsulates everything needed to talk with a remote node. */
 typedef struct clusterLink {
+    // 连接创建时间
     mstime_t ctime;             /* Link creation time */
+    // 套接字描述符
     int fd;                     /* TCP socket file descriptor */
+    // 输出缓冲区
     sds sndbuf;                 /* Packet send buffer */
+    // 输入缓冲区
     sds rcvbuf;                 /* Packet reception buffer */
+    // 与这个连接相关的节点
     struct clusterNode *node;   /* Node related to this link if any, or NULL */
 } clusterLink;
 
@@ -113,13 +118,22 @@ typedef struct clusterNodeFailReport {
     mstime_t time;             /* Time of the last report from this node. */
 } clusterNodeFailReport;
 
+/**
+ * 节点的当前状态
+ */
 typedef struct clusterNode {
+    // 节点的创建时间
     mstime_t ctime; /* Node object creation time. */
+    // 节点名称
     char name[CLUSTER_NAMELEN]; /* Node name, hex string, sha1-size */
+    // 节点标识，标识节点角色及状态
     int flags;      /* CLUSTER_NODE_... */
+    // 节点当前的配置纪元，用于实现故障转移
     uint64_t configEpoch; /* Last configEpoch observed for this node */
+    // 当前节点的槽位
     unsigned char slots[CLUSTER_SLOTS/8]; /* slots handled by this node */
     int numslots;   /* Number of slots handled by this node */
+    // 如果当前节点时主节点，标识从节点的个数
     int numslaves;  /* Number of slave nodes, if this is a master */
     struct clusterNode **slaves; /* pointers to slave nodes */
     struct clusterNode *slaveof; /* pointer to the master node. Note that it
@@ -133,24 +147,39 @@ typedef struct clusterNode {
     mstime_t repl_offset_time;  /* Unix time we received offset for this node */
     mstime_t orphaned_time;     /* Starting time of orphaned master condition */
     long long repl_offset;      /* Last known repl offset for this node. */
+    // 节点的IP
     char ip[NET_IP_STR_LEN];  /* Latest known IP address of this node */
+    // 节点的端口
     int port;                   /* Latest known clients port of this node */
     int cport;                  /* Latest known cluster port of this node. */
+    // 保存连接节点所需的相关信息
     clusterLink *link;          /* TCP/IP link with this node */
     list *fail_reports;         /* List of nodes signaling this as failing */
 } clusterNode;
 
+/**
+ * 当前节点视角下，集群所处的状态
+ */
 typedef struct clusterState {
+    // 当前节点
     clusterNode *myself;  /* This node */
+    // 集群当前的配置纪元，用于实现故障转移
     uint64_t currentEpoch;
+    // 集群当前的状态，在线还是下线
     int state;            /* CLUSTER_OK, CLUSTER_FAIL, ... */
+    // 集群中分配有槽位节点的数量
     int size;             /* Num of master nodes with at least one slot */
+    // 集群节点清单
     dict *nodes;          /* Hash table of name -> clusterNode structures */
     dict *nodes_black_list; /* Nodes we don't re-add for a few seconds. */
+    // 当前节点正在向外迁移的槽位
     clusterNode *migrating_slots_to[CLUSTER_SLOTS];
+    // 当前节点正在从其他节点迁移的槽位
     clusterNode *importing_slots_from[CLUSTER_SLOTS];
+    // 记录每个槽位对应的节点
     clusterNode *slots[CLUSTER_SLOTS];
     uint64_t slots_keys_count[CLUSTER_SLOTS];
+    // 槽和键的对应关系
     rax *slots_to_keys;
     /* The following fields are used to take the slave state on elections. */
     mstime_t failover_auth_time; /* Time of previous or next election. */

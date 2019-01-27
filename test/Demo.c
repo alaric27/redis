@@ -4,7 +4,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
+
 int main(int argc, char *argv[])
 {
-    printf("faasdf");
+    char *buf = "1123sadf";
+    printf("%d",strlen(buf));
 }

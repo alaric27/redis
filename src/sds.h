@@ -59,10 +59,10 @@ struct __attribute__ ((__packed__)) sdshdr5 {
 
 
 struct __attribute__ ((__packed__)) sdshdr8 {
-    uint8_t len; /* used */
-    uint8_t alloc; /* excluding the header and null terminator */
-    unsigned char flags; /* 3 lsb of type, 5 unused bits */
-    char buf[];
+    uint8_t len; /* sds 已使用的长度*/
+    uint8_t alloc; /* sds 总共分配的长度 */
+    unsigned char flags; /* flag用3bit来标明类型，类型后续解释，其余5bit目前没有使用*/
+    char buf[]; /* 数据存储buf*/
 };
 struct __attribute__ ((__packed__)) sdshdr16 {
     uint16_t len; /* used */
@@ -94,6 +94,12 @@ struct __attribute__ ((__packed__)) sdshdr64 {
 #define SDS_HDR(T,s) ((struct sdshdr##T *)((s)-(sizeof(struct sdshdr##T))))
 #define SDS_TYPE_5_LEN(f) ((f)>>SDS_TYPE_BITS)
 
+
+/**
+ * 返回sds已使用的空间
+ * @param s
+ * @return
+ */
 static inline size_t sdslen(const sds s) {
     unsigned char flags = s[-1];
     switch(flags&SDS_TYPE_MASK) {
@@ -111,6 +117,11 @@ static inline size_t sdslen(const sds s) {
     return 0;
 }
 
+/**
+ * 返回sds未使用的空间
+ * @param s
+ * @return
+ */
 static inline size_t sdsavail(const sds s) {
     unsigned char flags = s[-1];
     switch(flags&SDS_TYPE_MASK) {
@@ -225,10 +236,28 @@ static inline void sdssetalloc(sds s, size_t newlen) {
     }
 }
 
+/**
+ * 根据指定字符串和长度创建sds
+ */
 sds sdsnewlen(const void *init, size_t initlen);
+
+/**
+ * 创建一个包含指定字符串的sds
+ * @param init
+ * @return
+ */
 sds sdsnew(const char *init);
+
+/**
+ * 创建一个不包含任何内容的sds
+ * @return
+ */
 sds sdsempty(void);
 sds sdsdup(const sds s);
+
+/**
+ * 释放给定的sds
+ */
 void sdsfree(sds s);
 sds sdsgrowzero(sds s, size_t len);
 sds sdscatlen(sds s, const void *t, size_t len);

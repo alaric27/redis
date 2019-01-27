@@ -1086,6 +1086,13 @@ void updateCachedTime(void) {
  * a macro is used: run_with_period(milliseconds) { .... }
  */
 
+/**
+ * 定时执行，每秒执行server.hz次 server.hz默认为10
+ * @param eventLoop
+ * @param id
+ * @param clientData
+ * @return
+ */
 int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     int j;
     UNUSED(eventLoop);
@@ -4046,6 +4053,7 @@ int main(int argc, char **argv) {
     getRandomHexChars(hashseed,sizeof(hashseed));
     dictSetHashFunctionSeed((uint8_t*)hashseed);
     server.sentinel_mode = checkForSentinelMode(argc,argv);
+    // 初始化服务器状态结构
     initServerConfig();
     moduleInitModulesSystem();
 
@@ -4134,6 +4142,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
         resetServerSaveParams();
+        // 加载用户自定义配置
         loadServerConfig(configfile,options);
         sdsfree(options);
     }
@@ -4156,7 +4165,7 @@ int main(int argc, char **argv) {
     server.supervised = redisIsSupervised(server.supervised_mode);
     int background = server.daemonize && !server.supervised;
     if (background) daemonize();
-
+    // 初始化服务器数据结构
     initServer();
     if (background || server.pidfile) createPidFile();
     redisSetProcTitle(argv[0]);
@@ -4170,6 +4179,7 @@ int main(int argc, char **argv) {
         linuxMemoryWarnings();
     #endif
         moduleLoadFromQueue();
+        // 加载RDB或者AOF文件
         loadDataFromDisk();
         if (server.cluster_enabled) {
             if (verifyClusterConfigWithData() == C_ERR) {
@@ -4192,6 +4202,7 @@ int main(int argc, char **argv) {
         serverLog(LL_WARNING,"WARNING: You specified a maxmemory value that is less than 1MB (current value is %llu bytes). Are you sure this is what you really want?", server.maxmemory);
     }
 
+    // 执行事件循环
     aeSetBeforeSleepProc(server.el,beforeSleep);
     aeSetAfterSleepProc(server.el,afterSleep);
     aeMain(server.el);
