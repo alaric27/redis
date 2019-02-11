@@ -1424,12 +1424,15 @@ void processInputBuffer(client *c) {
         /* Determine request type when unknown. */
         if (!c->reqtype) {
             if (c->querybuf[c->qb_pos] == '*') {
+                // 多条查询
                 c->reqtype = PROTO_REQ_MULTIBULK;
             } else {
+                // 内联查询
                 c->reqtype = PROTO_REQ_INLINE;
             }
         }
 
+        // 将缓冲区中的内容转换成命令，以及命令参数
         if (c->reqtype == PROTO_REQ_INLINE) {
             if (processInlineBuffer(c) != C_OK) break;
         } else if (c->reqtype == PROTO_REQ_MULTIBULK) {
@@ -1443,6 +1446,7 @@ void processInputBuffer(client *c) {
             resetClient(c);
         } else {
             /* Only reset the client when the command was executed. */
+            // 执行命令，并重置客户端
             if (processCommand(c) == C_OK) {
                 if (c->flags & CLIENT_MASTER && !(c->flags & CLIENT_MULTI)) {
                     /* Update the applied replication offset of our master. */

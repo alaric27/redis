@@ -123,5 +123,18 @@ target_link_libraries(redis-cli
         PRIVATE hiredis
         )
 
+
+
+
 set(SRC_HELLC test/demo.c)
 add_executable(demo ${SRC_HELLC})
+target_include_directories(demo
+        PRIVATE ${REDIS_ROOT}/deps/linenoise
+        PRIVATE ${REDIS_ROOT}/deps/hiredis
+        PRIVATE ${REDIS_ROOT}/deps/lua/src)
+target_link_libraries(demo
+        PRIVATE pthread
+        PRIVATE m
+        PRIVATE lua
+        PRIVATE linenoise
+        PRIVATE hiredis)

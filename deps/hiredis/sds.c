@@ -38,6 +38,12 @@
 #include "sds.h"
 #include "sdsalloc.h"
 
+
+/**
+ * 根据sds类型计算头部大小
+ * @param type
+ * @return
+ */
 static inline int sdsHdrSize(char type) {
     switch(type&SDS_TYPE_MASK) {
         case SDS_TYPE_5:
@@ -54,6 +60,11 @@ static inline int sdsHdrSize(char type) {
     return 0;
 }
 
+/**
+ * 根据字符串的大小计算SDS类型
+ * @param string_size
+ * @return
+ */
 static inline char sdsReqType(size_t string_size) {
     if (string_size < 32)
         return SDS_TYPE_5;

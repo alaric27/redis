@@ -89,13 +89,16 @@ static inline char sdsReqType(size_t string_size) {
 sds sdsnewlen(const void *init, size_t initlen) {
     void *sh;
     sds s;
+    // 根据不同的长度决定使用不同的结构体
     char type = sdsReqType(initlen);
     /* Empty strings are usually created in order to append. Use type 8
      * since type 5 is not good at this. */
     if (type == SDS_TYPE_5 && initlen == 0) type = SDS_TYPE_8;
     int hdrlen = sdsHdrSize(type);
+    // 为了标记到底使用了哪种结构体
     unsigned char *fp; /* flags pointer. */
 
+    // 分配内存，hdrlen + initlen + '\0'
     sh = s_malloc(hdrlen+initlen+1);
     if (init==SDS_NOINIT)
         init = NULL;
@@ -103,6 +106,7 @@ sds sdsnewlen(const void *init, size_t initlen) {
         memset(sh, 0, hdrlen+initlen+1);
     if (sh == NULL) return NULL;
     s = (char*)sh+hdrlen;
+    // -1得到结构体中的flags属性的地址
     fp = ((unsigned char*)s)-1;
     switch(type) {
         case SDS_TYPE_5: {
@@ -141,6 +145,7 @@ sds sdsnewlen(const void *init, size_t initlen) {
     if (initlen && init)
         memcpy(s, init, initlen);
     s[initlen] = '\0';
+    // 这里返回的不是sdshrd结构体而是返回结构体中的buf，也就是真正的字符串
     return s;
 }
 

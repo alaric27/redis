@@ -2319,12 +2319,22 @@ struct redisCommand *lookupCommandOrOriginal(sds name) {
  * This should not be used inside commands implementation. Use instead
  * alsoPropagate(), preventCommandPropagation(), forceCommandPropagation().
  */
+/**
+ * 向 AOF 和从机发布数据更新
+ * @param cmd
+ * @param dbid
+ * @param argv
+ * @param argc
+ * @param flags
+ */
 void propagate(struct redisCommand *cmd, int dbid, robj **argv, int argc,
                int flags)
 {
     if (server.aof_state != AOF_OFF && flags & PROPAGATE_AOF)
+        // AOF 策略需要打开，且设置 AOF 传播标记，将更新发布给本地文件
         feedAppendOnlyFile(cmd,dbid,argv,argc);
     if (flags & PROPAGATE_REPL)
+        // 设置了从机传播标记，将更新发布给从机
         replicationFeedSlaves(server.slaves,dbid,argv,argc);
 }
 
@@ -2418,6 +2428,9 @@ void preventCommandReplication(client *c) {
  * preventCommandReplication(client *c);
  *
  */
+/**
+ * 客户端执行命令
+ */
 void call(client *c, int flags) {
     long long dirty, start, duration;
     int client_old_flags = c->flags;
@@ -2441,6 +2454,7 @@ void call(client *c, int flags) {
     /* Call the command. */
     dirty = server.dirty;
     start = ustime();
+    // 执行命令对应的函数
     c->cmd->proc(c);
     duration = ustime()-start;
     dirty = server.dirty-dirty;
@@ -2477,6 +2491,7 @@ void call(client *c, int flags) {
         real_cmd->calls++;
     }
 
+    // 将客户端请求的数据修改记录传播给 AOF 和从机
     /* Propagate the command into the AOF and replication link */
     if (flags & CMD_CALL_PROPAGATE &&
         (c->flags & CLIENT_PREVENT_PROP) != CLIENT_PREVENT_PROP)

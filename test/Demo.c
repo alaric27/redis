@@ -5,9 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include "../src/sds.h"
+
 
 int main(int argc, char *argv[])
 {
-    char *buf = "1123sadf";
-    printf("%d",strlen(buf));
+    sds sds1 = sdsnew("addadf");
+
+    printf("%s\n", sds1);
+    printf("%d", sdsavail(sds1));
+    printf("%d",sizeof(struct sdshdr8));
+
 }

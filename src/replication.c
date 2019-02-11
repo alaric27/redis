@@ -255,6 +255,7 @@ void replicationFeedSlaves(list *slaves, int dictid, robj **argv, int argc) {
     while((ln = listNext(&li))) {
         client *slave = ln->value;
 
+        // 如果从机要求全同步，则不对此从机发送数据
         /* Don't feed slaves that are still waiting for BGSAVE to start */
         if (slave->replstate == SLAVE_STATE_WAIT_BGSAVE_START) continue;
 
@@ -267,6 +268,7 @@ void replicationFeedSlaves(list *slaves, int dictid, robj **argv, int argc) {
 
         /* Finally any additional argument that was not stored inside the
          * static buffer if any (from j to argc). */
+        // 向从机发送命令
         for (j = 0; j < argc; j++)
             addReplyBulk(slave,argv[j]);
     }
